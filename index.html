@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voice Hub | AI Agent 語音回答與設定中心</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #0b0f19;
+      --card-bg: rgba(17, 24, 39, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --accent: #ec4899;
+      --accent-hover: #db2777;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.12) 0%, transparent 40%);
+      background-attachment: fixed;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      max-width: 800px;
+      width: 100%;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: linear-gradient(to right, #818cf8, #f472b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.05em;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+    }
+
+    main {
+      max-width: 900px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 2rem;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 35px rgba(99, 102, 241, 0.15);
+    }
+
+    h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #fff;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 0.5rem;
+    }
+
+    /* TTS Panel Styles */
+    .tts-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 100px;
+      background: rgba(10, 15, 30, 0.8);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 1rem;
+      color: #fff;
+      font-family: inherit;
+      font-size: 1rem;
+      resize: vertical;
+      transition: border-color 0.3s;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .control-row {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    select, button {
+      padding: 0.8rem 1.5rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      font-family: inherit;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    select {
+      background: rgba(10, 15, 30, 0.8);
+      border: 1px solid var(--card-border);
+      color: #fff;
+      flex-grow: 1;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    button.btn-primary {
+      background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%);
+      border: none;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+    }
+
+    button.btn-primary:hover {
+      background: linear-gradient(135deg, var(--primary-hover) 0%, #4338ca 100%);
+      transform: translateY(-1px);
+    }
+
+    button.btn-primary:active {
+      transform: translateY(0);
+    }
+
+    /* Tabs Component */
+    .tabs-header {
+      display: flex;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 1.5rem;
+      overflow-x: auto;
+      gap: 0.5rem;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.8rem 1.2rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-bottom: 2px solid transparent;
+      border-radius: 0;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+      color: #fff;
+    }
+
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Code Block Styles */
+    .code-container {
+      position: relative;
+      margin-top: 1rem;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #05070f;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    pre {
+      padding: 1.2rem;
+      overflow-x: auto;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      color: #e5e7eb;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #fff;
+      padding: 0.4rem 0.8rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      backdrop-filter: blur(4px);
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .success-alert {
+      color: #10b981;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.2rem;
+      margin-top: 0.5rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 3rem;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      padding-bottom: 2rem;
+    }
+
+    footer a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Voice Hub</h1>
+    <p>AI Agent 語音答覆設定與清洗功能控制台</p>
+  </header>
+
+  <main>
+    <!-- TTS Play Ground -->
+    <section class="card">
+      <h2>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary)"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+        語音合成測試 Playground
+      </h2>
+      <div class="tts-container">
+        <textarea id="tts-input" placeholder="請輸入欲測試的說明文字...">這個設定的意思是，當您要求用語音回答時，系統會自動使用微軟雲端語音工具，將回答合成為自然的中文語音，並直接在您的電腦背景播放。</textarea>
+        <div class="control-row">
+          <select id="voice-select">
+            <option value="Microsoft Hanhan Desktop - Chinese (Taiwan)">台灣中文男聲 (System Default)</option>
+            <option value="Microsoft Yating Desktop - Chinese (Taiwan)">台灣中文女聲 (System Default)</option>
+            <option value="zh-TW-YunJheNeural">zh-TW-YunJheNeural (男聲 - 推薦)</option>
+            <option value="zh-TW-HsiaoChenNeural">zh-TW-HsiaoChenNeural (女聲 - 活潑)</option>
+          </select>
+          <button class="btn-primary" id="play-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            測試播放
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Config Files and Instructions -->
+    <section class="card">
+      <h2>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent)"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        全域設定與技能代碼說明
+      </h2>
+      <div class="tabs-header">
+        <button class="tab-btn active" onclick="openTab(event, 'rules')">語音文字清洗規則</button>
+        <button class="tab-btn" onclick="openTab(event, 'global-specs')">全域語音設定</button>
+        <button class="tab-btn" onclick="openTab(event, 'paths')">Agent 放置路徑</button>
+        <button class="tab-btn" onclick="openTab(event, 'speak-skill')">Speak 技能代碼</button>
+      </div>
+
+      <!-- Tab: Rules -->
+      <div id="rules" class="tab-content active">
+        <p>語音轉寫文字後，往往帶有同音錯字或英文轉寫錯誤。這套受控區塊規則能引導 Agent 進行智慧文字清洗：</p>
+        <div class="code-container">
+          <button class="copy-btn" onclick="copyCode('rules-code')">複製區塊</button>
+          <pre id="rules-code"><!-- BEGIN:SENSEBAR_VOICE_INPUT_NORMALIZATION_V1 -->
+## 語音輸入文字正規化
+
+使用者可能以語音輸入，文字中可能出現同音錯字、詞界切分錯誤、標點遺失、英文工具名稱音譯，以及路徑或指令辨識錯誤。
+
+- 先依對話上下文理解使用者最合理的原意，不要逐字死讀。
+- 明顯且不影響實際行動的小錯字，直接理解並繼續，不要逐項糾正或打斷使用者。
+- 工具名稱可能被音譯或誤辨識。例如在 AI Agent 情境中，`Call Desk` 可能是 `Codex`、`Cloud Code` 可能是 `Claude Code`、`scheme` 可能是 `Skill`。這些只是語境提示，不得在所有情況下強制替換。
+- 如果模糊內容會影響實際行動，例如人名、檔名、路徑、指令、工具名稱、數字、日期、金額或核心需求，而且無法從上下文可靠判斷，先用一句話確認理解，再執行。
+- 不要默默把關鍵資訊改成猜測版本後直接執行。
+- 不要捏造使用者沒有說過的數值、路徑、日期、名稱或授權。
+- 回覆時使用自然、修正後的語意即可；除非使用者詢問，否則不必列出所有辨識錯字。
+<!-- END:SENSEBAR_VOICE_INPUT_NORMALIZATION_V1 --></pre>
+        </div>
+        <div class="success-alert" id="rules-alert">✅ 複製成功！</div>
+      </div>
+
+      <!-- Tab: Global Specs -->
+      <div id="global-specs" class="tab-content">
+        <p>本設定規範統一全域語音回覆風格、聲音模型、播放指令與模型備用切換原則：</p>
+        <div class="code-container">
+          <button class="copy-btn" onclick="copyCode('specs-code')">複製區塊</button>
+          <pre id="specs-code"><!-- BEGIN:SENSEBAR_GLOBAL_SPEECH_SYNC_RULES_V1 -->
+## AI Agent 全域語音與同步規範
+
+### 一、語音回覆設定
+- **核心工具**：Edge-TTS（免費、微軟雲端語音合成）
+- **聲音代碼**：預設使用 `zh-TW-YunJheNeural`（男聲）。若使用者指定，可切換至 `zh-TW-HsiaoChenNeural`（女聲）或 `zh-TW-HsiaoYuNeural`（女聲）。
+- **觸發時機**：使用者說「用語音回答」「唸出來」「唸給我聽」「用語音講結論」時執行。
+- **講稿撰寫**：口語化、精簡（100–250 字），數字用中文（如「五十頁」）。只講結論與下一步，細節留在文字回覆。
+- **播放方式**：一律行內播放，不開外部播放器視窗。
+- **語音結束後**：回報「語音已播放」即可，不重複文字內容。
+
+### 二、多 Agent 自動同步設定
+- **同步工具**：Chezmoi 負責將 `~/.claude/` 內的設定檔同步到 Git repo。
+- **開工與收工流程**：
+  - 開工（「開工」「我來了」「上次做到哪」）：檢查 Google Drive repo、Obsidian 工作筆記、`git status`、檢查遠端是否有新 commit，回報結構化摘要。
+  - 收工（「收工」「下班」「結束」）：`git status` 建議 commit 並 push、`chezmoi status` 變動則 commit + push、更新 Obsidian 工作筆記、回報 checklist。
+
+### 三、AI 模型切換原則
+- **原則**：以後請都先用 Open Code 做事。若 Open Code 的免費額度用完，再自動切換至 Antigravity 2 做事。
+<!-- END:SENSEBAR_GLOBAL_SPEECH_SYNC_RULES_V1 --></pre>
+        </div>
+        <div class="success-alert" id="specs-alert">✅ 複製成功！</div>
+      </div>
+
+      <!-- Tab: Paths -->
+      <div id="paths" class="tab-content">
+        <p>請將上面的設定檔，分別寫入本機中以下 Agent 對應的全域設定檔路徑中：</p>
+        <div class="code-container">
+          <button class="copy-btn" onclick="copyCode('paths-code')">複製指南</button>
+          <pre id="paths-code">1. ChatGPT Codex
+   - 設定檔：~/.codex/AGENTS.md
+   - 方式：將「清洗規則」及「全域規範」附加於檔案結尾。
+
+2. Claude Code
+   - 規則檔：~/.claude/rules/voice-input-normalization.md (清洗規則)
+   - 全域檔：~/.claude/CLAUDE.md (全域規範)
+   - 同步：使用 chezmoi add 同步至您的 git dotfiles。
+
+3. Google Antigravity
+   - 設定檔：~/.gemini/GEMINI.md
+   - 方式：寫入「清洗規則」及「全域規範」受控區塊。
+
+4. OpenCode
+   - 規則檔：~/.config/opencode/instructions/voice-input-normalization.md (清洗規則)
+   - 全域檔：~/.config/opencode/instructions/global-rules.md (全域規範)
+   - 配置：修改 ~/.config/opencode/opencode.json，將以上兩份 md 加入 instructions 陣列。</pre>
+        </div>
+        <div class="success-alert" id="paths-alert">✅ 複製成功！</div>
+      </div>
+
+      <!-- Tab: Speak Skill -->
+      <div id="speak-skill" class="tab-content">
+        <p>以下是 Speak 技能的 Python 實作，用來產生 MP3 語音並在背景行內播放：</p>
+        <div class="code-container">
+          <button class="copy-btn" onclick="copyCode('skill-code')">複製 Python 代碼</button>
+          <pre id="skill-code"># speak.py
+import asyncio
+import edge_tts
+import subprocess
+import sys
+import os
+
+async def speak_text(text, voice="zh-TW-YunJheNeural"):
+    output_mp3 = "temp_speech.mp3"
+    
+    # 1. 語音合成
+    print(f"Generating TTS for: {text[:15]}...")
+    communicate = edge_tts.Communicate(text, voice)
+    await communicate.save(output_mp3)
+    
+    # 2. 本機播放 (Windows PresentationCore)
+    print("Playing...")
+    ps_cmd = f"""
+    Add-Type -AssemblyName PresentationCore
+    $player = New-Object System.Windows.Media.MediaPlayer
+    $player.Open('{os.path.abspath(output_mp3)}')
+    Start-Sleep -Seconds 1
+    $player.Play()
+    Start-Sleep -Seconds 15
+    $player.Close()
+    """
+    subprocess.run(["powershell", "-Command", ps_cmd], capture_output=True)
+    
+    # 3. 清理
+    if os.path.exists(output_mp3):
+        os.remove(output_mp3)
+    print("Completed.")
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python speak.py 'your text'")
+        sys.exit(1)
+    asyncio.run(speak_text(sys.argv[1]))</pre>
+        </div>
+        <div class="success-alert" id="skill-alert">✅ 複製成功！</div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Made with ❤️ by <a href="https://github.com/hungjuiying0606-dotcom" target="_blank">hungjuiying0606-dotcom</a> | Voice Hub &copy; 2026</p>
+  </footer>
+
+  <script>
+    // Tab switching logic
+    function openTab(evt, tabId) {
+      const tabContents = document.getElementsByClassName("tab-content");
+      for (let i = 0; i < tabContents.length; i++) {
+        tabContents[i].classList.remove("active");
+      }
+
+      const tabBtns = document.getElementsByClassName("tab-btn");
+      for (let i = 0; i < tabBtns.length; i++) {
+        tabBtns[i].classList.remove("active");
+      }
+
+      document.getElementById(tabId).classList.add("active");
+      evt.currentTarget.classList.add("active");
+    }
+
+    // Copy to clipboard logic
+    function copyCode(elementId) {
+      const textToCopy = document.getElementById(elementId).innerText;
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        const alertId = elementId.split('-')[0] + '-alert';
+        const alertEl = document.getElementById(alertId);
+        alertEl.style.opacity = '1';
+        setTimeout(() => {
+          alertEl.style.opacity = '0';
+        }, 2000);
+      });
+    }
+
+    // TTS Web Speech API synthesis
+    document.getElementById('play-btn').addEventListener('click', () => {
+      const input = document.getElementById('tts-input').value;
+      const voiceSelect = document.getElementById('voice-select').value;
+
+      if (!input.trim()) return;
+
+      // 如果瀏覽器支援 Web Speech API
+      if ('speechSynthesis' in window) {
+        // 停止之前的播放
+        window.speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(input);
+        
+        // 尋找台灣中文聲音
+        const voices = window.speechSynthesis.getVoices();
+        let selectedVoice = null;
+
+        if (voiceSelect.includes("YunJheNeural") || voiceSelect.includes("HsiaoChen")) {
+          // 模擬 edge-tts，在瀏覽器端尋找中文聲音
+          selectedVoice = voices.find(v => v.lang.includes("ZH") || v.lang.includes("zh"));
+        } else {
+          selectedVoice = voices.find(v => v.name === voiceSelect);
+        }
+
+        if (selectedVoice) {
+          utterance.voice = selectedVoice;
+        }
+
+        utterance.lang = "zh-TW";
+        utterance.rate = 1.0;
+        window.speechSynthesis.speak(utterance);
+      } else {
+        alert("非常抱歉，您的瀏覽器不支援 Web Speech API 語音播放功能！");
+      }
+    });
+
+    // 確保 getVoices 被觸發載入
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.getVoices();
+    }
+  </script>
+</body>
+</html>
