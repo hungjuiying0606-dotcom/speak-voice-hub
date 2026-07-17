@@ -304,10 +304,7 @@
         <textarea id="tts-input" placeholder="請輸入欲測試的說明文字...">這個設定的意思是，當您要求用語音回答時，系統會自動使用微軟雲端語音工具，將回答合成為自然的中文語音，並直接在您的電腦背景播放。</textarea>
         <div class="control-row">
           <select id="voice-select">
-            <option value="Microsoft Hanhan Desktop - Chinese (Taiwan)">台灣中文男聲 (System Default)</option>
-            <option value="Microsoft Yating Desktop - Chinese (Taiwan)">台灣中文女聲 (System Default)</option>
-            <option value="zh-TW-YunJheNeural">zh-TW-YunJheNeural (男聲 - 推薦)</option>
-            <option value="zh-TW-HsiaoChenNeural">zh-TW-HsiaoChenNeural (女聲 - 活潑)</option>
+            <option value="">正在載入系統語音...</option>
           </select>
           <button class="btn-primary" id="play-btn">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
@@ -490,29 +487,124 @@ if __name__ == "__main__":
       });
     }
 
+    // Web Speech API voices loading and selection
+    const voiceSelect = document.getElementById('voice-select');
+    let synthVoices = [];
+
+    function populateVoices() {
+      if (!('speechSynthesis' in window)) return;
+      
+      synthVoices = window.speechSynthesis.getVoices();
+      
+      // 過濾出中文語音 (台灣、香港、中國大陸)
+      const zhVoices = synthVoices.filter(v => 
+        v.lang.toLowerCase().includes("zh") || 
+        v.lang.toLowerCase().includes("cmn")
+      );
+      
+      voiceSelect.innerHTML = "";
+      
+      if (zhVoices.length === 0) {
+        // 如果沒有偵測到中文語音，顯示預設語意提示，並加載所有語音
+        const opt = document.createElement('option');
+        opt.value = "";
+        opt.textContent = "系統中未發現中文語音，顯示所有語音...";
+        voiceSelect.appendChild(opt);
+        
+        synthVoices.forEach(v => {
+          const o = document.createElement('option');
+          o.value = v.name;
+          o.textContent = `${v.name} (${v.lang})`;
+          voiceSelect.appendChild(o);
+        });
+      } else {
+        // 先對聲音進行分類排序：繁體中文優先，且標記性別
+        zhVoices.forEach(v => {
+          const o = document.createElement('option');
+          o.value = v.name;
+          
+          let label = v.name;
+          
+          // 精確辨識微軟與常用中文語音的性別
+          if (v.name.includes("Zhiwei")) {
+            label = "台灣中文男聲 (志偉)";
+          } else if (v.name.includes("Yating")) {
+            label = "台灣中文女聲 (雅婷)";
+          } else if (v.name.includes("Hanhan")) {
+            label = "台灣中文女聲/童聲 (瀚瀚)";
+          } else if (v.name.includes("Huihui")) {
+            label = "普通話女聲 (曉曉)";
+          } else if (v.name.includes("Yaoyao")) {
+            label = "普通話女聲 (瑤瑤)";
+          } else if (v.name.includes("Kangkang")) {
+            label = "普通話男聲 (康康)";
+          } else if (v.name.includes("Danny")) {
+            label = "粵語男聲 (Danny)";
+          } else if (v.name.includes("Sinji")) {
+            label = "粵語女聲 (Sinji)";
+          } else {
+            // 其他中文聲音，嘗試依據語音特徵猜測性別
+            const lowerName = v.name.toLowerCase();
+            if (lowerName.includes("male") || lowerName.includes("man")) {
+              label = `${v.name} (男聲)`;
+            } else if (lowerName.includes("female") || lowerName.includes("woman")) {
+              label = `${v.name} (女聲)`;
+            } else {
+              label = `${v.name} (${v.lang})`;
+            }
+          }
+          
+          o.textContent = label;
+          voiceSelect.appendChild(o);
+        });
+        
+        // 額外加入 Edge-TTS 的雲端語意說明選項 (提示作用)
+        const edgeOpt1 = document.createElement('option');
+        edgeOpt1.value = "EDGE_YUNJHE";
+        edgeOpt1.textContent = "zh-TW-YunJheNeural (男聲 - AI Agent 預設)";
+        voiceSelect.appendChild(edgeOpt1);
+        
+        const edgeOpt2 = document.createElement('option');
+        edgeOpt2.value = "EDGE_HSIAOCHEN";
+        edgeOpt2.textContent = "zh-TW-HsiaoChenNeural (女聲 - AI Agent 選用)";
+        voiceSelect.appendChild(edgeOpt2);
+      }
+    }
+
+    if ('speechSynthesis' in window) {
+      populateVoices();
+      // Chrome 和部分瀏覽器需要事件來載入語音
+      window.speechSynthesis.onvoiceschanged = populateVoices;
+    } else {
+      voiceSelect.innerHTML = "<option>瀏覽器不支援 Web Speech API</option>";
+    }
+
     // TTS Web Speech API synthesis
     document.getElementById('play-btn').addEventListener('click', () => {
       const input = document.getElementById('tts-input').value;
-      const voiceSelect = document.getElementById('voice-select').value;
+      const selectedValue = voiceSelect.value;
 
       if (!input.trim()) return;
 
-      // 如果瀏覽器支援 Web Speech API
       if ('speechSynthesis' in window) {
-        // 停止之前的播放
         window.speechSynthesis.cancel();
 
         const utterance = new SpeechSynthesisUtterance(input);
         
-        // 尋找台灣中文聲音
-        const voices = window.speechSynthesis.getVoices();
         let selectedVoice = null;
-
-        if (voiceSelect.includes("YunJheNeural") || voiceSelect.includes("HsiaoChen")) {
-          // 模擬 edge-tts，在瀏覽器端尋找中文聲音
-          selectedVoice = voices.find(v => v.lang.includes("ZH") || v.lang.includes("zh"));
+        
+        if (selectedValue === "EDGE_YUNJHE") {
+          // AI Agent 預設男聲，前端測試時尋找本機的 Zhiwei (志偉) 男聲來播放
+          selectedVoice = synthVoices.find(v => v.name.includes("Zhiwei"));
+          if (!selectedVoice) {
+            // 若無 Zhiwei，尋找第一個中文男聲，或普通話男聲 Kangkang
+            selectedVoice = synthVoices.find(v => (v.lang.includes("zh") || v.lang.includes("ZH")) && (v.name.includes("Kangkang") || v.name.includes("Danny")));
+          }
+        } else if (selectedValue === "EDGE_HSIAOCHEN") {
+          // 前端測試時尋找本機的 Yating (雅婷) 或 Hanhan (瀚瀚) 女聲來播放
+          selectedVoice = synthVoices.find(v => v.name.includes("Yating") || v.name.includes("Hanhan"));
         } else {
-          selectedVoice = voices.find(v => v.name === voiceSelect);
+          selectedVoice = synthVoices.find(v => v.name === selectedValue);
         }
 
         if (selectedVoice) {
@@ -526,11 +618,6 @@ if __name__ == "__main__":
         alert("非常抱歉，您的瀏覽器不支援 Web Speech API 語音播放功能！");
       }
     });
-
-    // 確保 getVoices 被觸發載入
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.getVoices();
-    }
   </script>
 </body>
 </html>
